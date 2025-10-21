@@ -1,0 +1,144 @@
+@import "tailwindcss";
+
+/* CSS HEX */
+/* --black: #000001ff;
+--violet: #7E29F0ff;
+--tekhelet: #561E97ff;
+--russian-violet: #190830ff;
+
+/* CSS HSL 
+--black: hsla(240, 100%, 0%, 1);
+--violet: hsla(266, 87%, 55%, 1);
+--tekhelet: hsla(268, 67%, 35%, 1);
+--russian-violet: hsla(266, 71%, 11%, 1);
+
+/* SCSS HEX 
+$black: #000001ff;
+$violet: #7E29F0ff;
+$tekhelet: #561E97ff;
+$russian-violet: #190830ff;
+
+/* SCSS HSL 
+$black: hsla(240, 100%, 0%, 1);
+$violet: hsla(266, 87%, 55%, 1);
+$tekhelet: hsla(268, 67%, 35%, 1);
+$russian-violet: hsla(266, 71%, 11%, 1);
+
+/* SCSS RGB 
+$black: rgba(0, 0, 1, 1);
+$violet: rgba(126, 41, 240, 1);
+$tekhelet: rgba(86, 30, 151, 1);
+$russian-violet: rgba(25, 8, 48, 1);
+
+/* SCSS Gradient 
+$gradient-top: linear-gradient(0deg, #000001ff, #7E29F0ff, #561E97ff, #190830ff);
+$gradient-right: linear-gradient(90deg, #000001ff, #7E29F0ff, #561E97ff, #190830ff);
+$gradient-bottom: linear-gradient(180deg, #000001ff, #7E29F0ff, #561E97ff, #190830ff);
+$gradient-left: linear-gradient(270deg, #000001ff, #7E29F0ff, #561E97ff, #190830ff);
+$gradient-top-right: linear-gradient(45deg, #000001ff, #7E29F0ff, #561E97ff, #190830ff);
+$gradient-bottom-right: linear-gradient(135deg, #000001ff, #7E29F0ff, #561E97ff, #190830ff);
+$gradient-top-left: linear-gradient(225deg, #000001ff, #7E29F0ff, #561E97ff, #190830ff);
+$gradient-bottom-left: linear-gradient(315deg, #000001ff, #7E29F0ff, #561E97ff, #190830ff);
+$gradient-radial: radial-gradient(#000001ff, #7E29F0ff, #561E97ff, #190830ff); */
+
+@theme {
+    --black:#000001ff;
+    --violet:#7E29F0ff;
+    --tekhelet:#561E97ff;
+    --russian-violet:#190830ff;
+}
+@font-face {
+  font-family: 'Caldina Regular';
+  src: url('./assests/fonts/CaldinaRegular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Apply Caldina font globally */
+* {
+  font-family: 'Caldina Regular', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+body {
+  font-family: 'Caldina Regular', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background: linear-gradient(135deg, #000001 0%, #190830 50%, #561E97 100%);
+}
+
+.font-caldina {
+  font-family: 'Caldina Regular', sans-serif;
+}
+
+/* Glassmorphism utilities */
+.glass {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.glass-dark {
+  background: rgba(25, 8, 48, 0.6);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(126, 41, 240, 0.2);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(25, 8, 48, 0.2);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #7E29F0 0%, #561E97 100%);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #9333EA 0%, #7E29F0 100%);
+}
+
+/* Glow effects */
+.glow-purple {
+  box-shadow: 0 0 20px rgba(126, 41, 240, 0.5);
+}
+
+.glow-purple-sm {
+  box-shadow: 0 0 10px rgba(126, 41, 240, 0.3);
+}
+
+/* Safe area for mobile */
+.safe-area-inset-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Animations */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
