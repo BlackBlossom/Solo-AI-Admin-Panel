@@ -31,7 +31,7 @@ const Settings = () => {
   const [disclosure, setDisclosure] = useState('masked'); // public, masked, full - default to masked
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
   const [pendingChanges, setPendingChanges] = useState(null);
-  const [tabIndicator, setTabIndicator] = useState({ left: 0, width: 0 });
+  const [tabIndicator, setTabIndicator] = useState({ left: 0, top: 0, width: 0, height: 0 });
 
   useEffect(() => {
     fetchSettings();
@@ -39,16 +39,32 @@ const Settings = () => {
 
   // Update tab indicator position
   useEffect(() => {
-    const activeButton = document.querySelector(`[data-tab="${activeTab}"]`);
-    if (activeButton) {
-      const parent = activeButton.parentElement;
-      const rect = activeButton.getBoundingClientRect();
-      const parentRect = parent.getBoundingClientRect();
-      setTabIndicator({
-        left: rect.left - parentRect.left,
-        width: rect.width
-      });
-    }
+    const updateIndicator = () => {
+      const activeButton = document.querySelector(`[data-tab="${activeTab}"]`);
+      const parent = activeButton?.parentElement;
+      
+      if (activeButton && parent) {
+        const buttonRect = activeButton.getBoundingClientRect();
+        const parentRect = parent.getBoundingClientRect();
+        
+        setTabIndicator({
+          left: buttonRect.left - parentRect.left,
+          top: buttonRect.top - parentRect.top,
+          width: buttonRect.width,
+          height: buttonRect.height
+        });
+      }
+    };
+    
+    // Small delay to ensure DOM is ready
+    const timeoutId = setTimeout(updateIndicator, 10);
+    
+    // Update on window resize
+    window.addEventListener('resize', updateIndicator);
+    return () => {
+      clearTimeout(timeoutId);
+      window.removeEventListener('resize', updateIndicator);
+    };
   }, [activeTab]);
 
   const fetchSettings = async () => {
@@ -271,19 +287,23 @@ const Settings = () => {
       <div className="mb-8">
         <div className="backdrop-blur-xl bg-white/50 dark:bg-gray-900/50 border border-purple-500/20 rounded-2xl p-2 shadow-xl">
           <div className="flex flex-wrap gap-2 relative">
-            {/* Animated background indicator */}
+            {/* Animated background indicator - always present */}
             <motion.div
-              className="absolute bg-gradient-to-r from-[#7E29F0] to-[#561E97] rounded-xl shadow-lg shadow-purple-500/50 h-[calc(100%-0.5rem)] self-center"
+              className="absolute bg-gradient-to-r from-[#7E29F0] to-[#561E97] rounded-xl shadow-lg shadow-purple-500/50 pointer-events-none"
               animate={{
                 left: tabIndicator.left,
-                width: tabIndicator.width
+                top: tabIndicator.top,
+                width: tabIndicator.width,
+                height: tabIndicator.height
               }}
+              initial={false}
               transition={{
                 type: 'spring',
-                stiffness: 400,
-                damping: 30
+                stiffness: 500,
+                damping: 35,
+                mass: 0.8
               }}
-              style={{ pointerEvents: 'none' }}
+              style={{ willChange: 'transform, width, height' }}
             />
             
             {tabs.map((tab) => {
@@ -294,14 +314,21 @@ const Settings = () => {
                   key={tab.id}
                   data-tab={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`relative px-6 py-3 rounded-xl font-medium transition-colors duration-200 flex items-center gap-2 z-10 ${
+                  className="relative px-6 py-3 rounded-xl font-medium transition-colors duration-200 flex items-center gap-2 group"
+                >
+                  {/* Icon and text */}
+                  <Icon className={`w-4 h-4 relative z-10 transition-colors duration-200 ${
                     isActive
                       ? 'text-white'
-                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-                  }`}
-                >
-                  <Icon className="w-4 h-4" />
-                  <span>{tab.label}</span>
+                      : 'text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white'
+                  }`} />
+                  <span className={`relative z-10 transition-colors duration-200 ${
+                    isActive
+                      ? 'text-white'
+                      : 'text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white'
+                  }`}>
+                    {tab.label}
+                  </span>
                 </button>
               );
             })}
