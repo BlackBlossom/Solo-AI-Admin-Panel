@@ -100,8 +100,8 @@ const Notifications = () => {
     try {
       setLoading(true);
       const data = await notificationService.getAll(filters);
-      setNotifications(data.data.notifications);
-      setPagination(data.data.pagination);
+      setNotifications(data.data?.notifications || []);
+      setPagination(data.meta?.pagination || {});
     } catch (error) {
       console.error('Error fetching notifications:', error);
       toast.error(error.response?.data?.message || 'Failed to fetch notifications');
@@ -464,7 +464,7 @@ const Notifications = () => {
                 </div>
                 <TrendingUp className="w-4 h-4 text-gray-400" />
               </div>
-              <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Total Sent</h3>
+              <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Total Notifications</h3>
               <p className="text-3xl font-bold text-gray-900 dark:text-white">
                 {stats.totalNotifications?.toLocaleString() || 0}
               </p>
@@ -487,7 +487,7 @@ const Notifications = () => {
               </div>
               <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Success Rate</h3>
               <p className="text-3xl font-bold text-gray-900 dark:text-white">
-                {typeof stats.successRate === 'number' ? `${stats.successRate.toFixed(1)}%` : '0%'}
+                {stats.successRate ? `${parseFloat(stats.successRate).toFixed(1)}%` : '0%'}
               </p>
             </div>
           </motion.div>
@@ -506,9 +506,9 @@ const Notifications = () => {
                 </div>
                 <TrendingUp className="w-4 h-4 text-gray-400" />
               </div>
-              <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Users Reached</h3>
+              <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Total Sent</h3>
               <p className="text-3xl font-bold text-gray-900 dark:text-white">
-                {stats.totalUsersReached?.toLocaleString() || 0}
+                {stats.totalSent?.toLocaleString() || 0}
               </p>
             </div>
           </motion.div>
@@ -527,9 +527,9 @@ const Notifications = () => {
                 </div>
                 <AlertCircle className="w-4 h-4 text-gray-400" />
               </div>
-              <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Failed</h3>
+              <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Total Failed</h3>
               <p className="text-3xl font-bold text-gray-900 dark:text-white">
-                {stats.failedNotifications?.toLocaleString() || 0}
+                {stats.totalFailed?.toLocaleString() || 0}
               </p>
             </div>
           </motion.div>
@@ -680,10 +680,10 @@ const Notifications = () => {
                         <td className="py-4 px-6">
                           <div className="text-sm">
                             <div className="text-green-600 dark:text-green-400 font-medium">
-                              ✓ {notification.successCount || 0}
+                              ✓ {notification.stats?.totalSent || 0}
                             </div>
                             <div className="text-red-600 dark:text-red-400 font-medium">
-                              ✗ {notification.failureCount || 0}
+                              ✗ {notification.stats?.totalFailed || 0}
                             </div>
                           </div>
                         </td>
@@ -802,23 +802,29 @@ const Notifications = () => {
                 <BarChart3 className="w-4 h-4" />
                 Delivery Statistics
               </h4>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-4 gap-4">
                 <div className="text-center">
                   <label className="text-gray-600 dark:text-gray-400 text-xs font-medium">Targeted</label>
                   <p className="text-gray-900 dark:text-white text-2xl font-bold mt-1">
-                    {selectedNotification.targetedUserCount || 0}
+                    {selectedNotification.stats?.totalTargeted || 0}
                   </p>
                 </div>
                 <div className="text-center">
-                  <label className="text-green-600 dark:text-green-400 text-xs font-medium">Success</label>
+                  <label className="text-green-600 dark:text-green-400 text-xs font-medium">Sent</label>
                   <p className="text-green-600 dark:text-green-400 text-2xl font-bold mt-1">
-                    {selectedNotification.successCount || 0}
+                    {selectedNotification.stats?.totalSent || 0}
+                  </p>
+                </div>
+                <div className="text-center">
+                  <label className="text-blue-600 dark:text-blue-400 text-xs font-medium">Delivered</label>
+                  <p className="text-blue-600 dark:text-blue-400 text-2xl font-bold mt-1">
+                    {selectedNotification.stats?.totalDelivered || 0}
                   </p>
                 </div>
                 <div className="text-center">
                   <label className="text-red-600 dark:text-red-400 text-xs font-medium">Failed</label>
                   <p className="text-red-600 dark:text-red-400 text-2xl font-bold mt-1">
-                    {selectedNotification.failureCount || 0}
+                    {selectedNotification.stats?.totalFailed || 0}
                   </p>
                 </div>
               </div>
