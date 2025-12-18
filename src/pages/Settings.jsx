@@ -19,7 +19,11 @@ import {
   Check,
   X,
   AlertCircle,
-  Info
+  Info,
+  Bell,
+  MessageSquare,
+  Lightbulb,
+  Flame
 } from 'lucide-react';
 
 const Settings = () => {
@@ -192,10 +196,14 @@ const Settings = () => {
     { id: 'email', label: 'Email', icon: Mail },
     { id: 'cloudinary', label: 'Cloudinary', icon: Cloud },
     { id: 'mongodb', label: 'Database', icon: Server },
-    { id: 'video', label: 'Video Upload', icon: Video },
-    { id: 'urls', label: 'URLs', icon: Globe },
-    { id: 'features', label: 'Features', icon: Zap },
+    // { id: 'video', label: 'Video Upload', icon: Video },
+    // { id: 'urls', label: 'URLs', icon: Globe },
+    // { id: 'features', label: 'Features', icon: Zap },
     { id: 'api', label: 'API Keys', icon: Key },
+    { id: 'firebase', label: 'Firebase', icon: Flame },
+    { id: 'reddit', label: 'Reddit', icon: MessageSquare },
+    { id: 'rapidapi', label: 'RapidAPI', icon: Zap },
+    { id: 'inspiration', label: 'Inspiration', icon: Lightbulb },
   ];
 
   if (loading) {
@@ -426,7 +434,7 @@ const Settings = () => {
                 placeholder="support@example.com"
               />
 
-              <div className="md:col-span-2">
+              {/* <div className="md:col-span-2">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <ToggleField
                     label="Maintenance Mode"
@@ -452,7 +460,7 @@ const Settings = () => {
                     }
                   />
                 </div>
-              </div>
+              </div> */}
             </div>
           </SettingsSection>
         )}
@@ -772,7 +780,7 @@ const Settings = () => {
           </SettingsSection>
         )}
 
-        {activeTab === 'video' && (
+        {/* {activeTab === 'video' && (
           <SettingsSection title="Video Upload Settings" icon={Video}>
             <div className="space-y-6">
               <InputField
@@ -842,9 +850,9 @@ const Settings = () => {
               />
             </div>
           </SettingsSection>
-        )}
+        )} */}
 
-        {activeTab === 'urls' && (
+        {/* {activeTab === 'urls' && (
           <SettingsSection title="URL Configuration" icon={Globe}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <InputField
@@ -871,9 +879,9 @@ const Settings = () => {
               />
             </div>
           </SettingsSection>
-        )}
+        )} */}
 
-        {activeTab === 'features' && (
+        {/* {activeTab === 'features' && (
           <SettingsSection title="Feature Flags" icon={Zap}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {Object.entries(formData.features || {}).map(([key, value]) => (
@@ -894,10 +902,10 @@ const Settings = () => {
               ))}
             </div>
           </SettingsSection>
-        )}
+        )} */}
 
         {activeTab === 'api' && (
-          <SettingsSection title="API Keys" icon={Key}>
+          <SettingsSection title="Third-Party API Keys" icon={Key}>
             <div className="space-y-6">
               <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-xl">
                 <div className="flex items-start gap-3">
@@ -912,24 +920,6 @@ const Settings = () => {
                   </div>
                 </div>
               </div>
-
-              {(disclosure === 'masked' || disclosure === 'full') && formData.apiKeys?.geminiApiKey && (
-                <InputField
-                  label="Gemini API Key"
-                  type={disclosure === 'full' ? 'text' : 'password'}
-                  value={formData.apiKeys?.geminiApiKey || ''}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      apiKeys: {
-                        ...formData.apiKeys,
-                        geminiApiKey: e.target.value,
-                      },
-                    })
-                  }
-                  placeholder="Enter Gemini API key"
-                />
-              )}
 
               {(disclosure === 'masked' || disclosure === 'full') && formData.apiKeys?.bundleSocialApiKey && (
                 <InputField
@@ -964,13 +954,367 @@ const Settings = () => {
                 placeholder="Enter organization ID"
               />
 
+              {(disclosure === 'masked' || disclosure === 'full') && formData.apiKeys?.falApiKey && (
+                <InputField
+                  label="FAL API Key"
+                  type={disclosure === 'full' ? 'text' : 'password'}
+                  value={formData.apiKeys?.falApiKey || ''}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      apiKeys: {
+                        ...formData.apiKeys,
+                        falApiKey: e.target.value,
+                      },
+                    })
+                  }
+                  placeholder="Enter FAL API key"
+                />
+              )}
+
+              <InputField
+                label="FAL Model"
+                value={formData.apiKeys?.falModel || ''}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    apiKeys: {
+                      ...formData.apiKeys,
+                      falModel: e.target.value,
+                    },
+                  })
+                }
+                placeholder="fal-ai/flux/dev"
+              />
+
               {disclosure === 'public' && (
                 <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700">
                   <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
-                    🔒 API Keys are hidden in public mode. Only Organization ID is visible.
+                    🔒 API Keys are hidden in public mode. Only Organization ID and Model info are visible.
                   </p>
                 </div>
               )}
+            </div>
+          </SettingsSection>
+        )}
+
+        {activeTab === 'firebase' && (
+          <SettingsSection title="Firebase Configuration" icon={Flame}>
+            <div className="space-y-6">
+              <div className="p-4 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-700 rounded-xl">
+                <div className="flex items-start gap-3">
+                  <Flame className="w-5 h-5 text-orange-600 dark:text-orange-400 mt-0.5" />
+                  <div>
+                    <h4 className="text-sm font-semibold text-orange-800 dark:text-orange-300 mb-1">
+                      Firebase Push Notifications
+                    </h4>
+                    <p className="text-xs text-orange-700 dark:text-orange-400">
+                      Configure Firebase for push notifications and real-time features.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 p-4 bg-white/50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700">
+                <input
+                  type="checkbox"
+                  id="firebase-enabled"
+                  checked={formData.firebase?.enabled || false}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      firebase: {
+                        ...formData.firebase,
+                        enabled: e.target.checked,
+                      },
+                    })
+                  }
+                  className="w-5 h-5 text-purple-600 rounded focus:ring-2 focus:ring-purple-500"
+                />
+                <label htmlFor="firebase-enabled" className="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer">
+                  Enable Firebase Integration
+                </label>
+              </div>
+
+              {(disclosure === 'masked' || disclosure === 'full') && formData.firebase?.serviceAccount && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Service Account JSON
+                  </label>
+                  <textarea
+                    value={formData.firebase?.serviceAccount || ''}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        firebase: {
+                          ...formData.firebase,
+                          serviceAccount: e.target.value,
+                        },
+                      })
+                    }
+                    rows={8}
+                    className={`w-full px-4 py-3 bg-white/50 dark:bg-gray-800/50 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all outline-none placeholder-gray-400 resize-none font-mono text-xs ${
+                      disclosure === 'masked' ? 'blur-sm hover:blur-none' : ''
+                    }`}
+                    placeholder='{"type": "service_account", "project_id": "...", ...}'
+                  />
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                    Paste your Firebase service account JSON configuration
+                  </p>
+                </div>
+              )}
+
+              {disclosure === 'public' && (
+                <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700">
+                  <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
+                    🔒 Service Account credentials are hidden in public mode
+                  </p>
+                </div>
+              )}
+            </div>
+          </SettingsSection>
+        )}
+
+        {activeTab === 'reddit' && (
+          <SettingsSection title="Reddit Integration" icon={MessageSquare}>
+            <div className="space-y-6">
+              <div className="p-4 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-700 rounded-xl">
+                <div className="flex items-start gap-3">
+                  <MessageSquare className="w-5 h-5 text-orange-600 dark:text-orange-400 mt-0.5" />
+                  <div>
+                    <h4 className="text-sm font-semibold text-orange-800 dark:text-orange-300 mb-1">
+                      Reddit API Configuration
+                    </h4>
+                    <p className="text-xs text-orange-700 dark:text-orange-400">
+                      Configure Reddit API credentials for content inspiration and trending topics.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {(disclosure === 'masked' || disclosure === 'full') && formData.reddit?.clientId && (
+                  <InputField
+                    label="Client ID"
+                    type={disclosure === 'full' ? 'text' : 'password'}
+                    value={formData.reddit?.clientId || ''}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        reddit: {
+                          ...formData.reddit,
+                          clientId: e.target.value,
+                        },
+                      })
+                    }
+                    placeholder="Reddit Client ID"
+                  />
+                )}
+
+                {(disclosure === 'masked' || disclosure === 'full') && formData.reddit?.clientSecret && (
+                  <InputField
+                    label="Client Secret"
+                    type={disclosure === 'full' ? 'text' : 'password'}
+                    value={formData.reddit?.clientSecret || ''}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        reddit: {
+                          ...formData.reddit,
+                          clientSecret: e.target.value,
+                        },
+                      })
+                    }
+                    placeholder="Reddit Client Secret"
+                  />
+                )}
+
+                <InputField
+                  label="Username"
+                  value={formData.reddit?.username || ''}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      reddit: {
+                        ...formData.reddit,
+                        username: e.target.value,
+                      },
+                    })
+                  }
+                  placeholder="Reddit Username"
+                />
+
+                {(disclosure === 'masked' || disclosure === 'full') && formData.reddit?.password && (
+                  <InputField
+                    label="Password"
+                    type={disclosure === 'full' ? 'text' : 'password'}
+                    value={formData.reddit?.password || ''}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        reddit: {
+                          ...formData.reddit,
+                          password: e.target.value,
+                        },
+                      })
+                    }
+                    placeholder="Reddit Password"
+                  />
+                )}
+              </div>
+
+              <InputField
+                label="User Agent"
+                value={formData.reddit?.userAgent || ''}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    reddit: {
+                      ...formData.reddit,
+                      userAgent: e.target.value,
+                    },
+                  })
+                }
+                placeholder="SoloAI/1.0.0 (by /u/YourUsername)"
+              />
+
+              {disclosure === 'public' && (
+                <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700">
+                  <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
+                    🔒 Reddit credentials are hidden in public mode. Only username and user agent are visible.
+                  </p>
+                </div>
+              )}
+            </div>
+          </SettingsSection>
+        )}
+
+        {activeTab === 'rapidapi' && (
+          <SettingsSection title="RapidAPI Configuration" icon={Zap}>
+            <div className="space-y-6">
+              <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-xl">
+                <div className="flex items-start gap-3">
+                  <Zap className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5" />
+                  <div>
+                    <h4 className="text-sm font-semibold text-blue-800 dark:text-blue-300 mb-1">
+                      RapidAPI Services
+                    </h4>
+                    <p className="text-xs text-blue-700 dark:text-blue-400">
+                      Configure RapidAPI for accessing various third-party services and APIs.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 p-4 bg-white/50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700">
+                <input
+                  type="checkbox"
+                  id="rapidapi-enabled"
+                  checked={formData.rapidApi?.enabled || false}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      rapidApi: {
+                        ...formData.rapidApi,
+                        enabled: e.target.checked,
+                      },
+                    })
+                  }
+                  className="w-5 h-5 text-purple-600 rounded focus:ring-2 focus:ring-purple-500"
+                />
+                <label htmlFor="rapidapi-enabled" className="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer">
+                  Enable RapidAPI Integration
+                </label>
+              </div>
+
+              {(disclosure === 'masked' || disclosure === 'full') && formData.rapidApi?.key && (
+                <InputField
+                  label="RapidAPI Key"
+                  type={disclosure === 'full' ? 'text' : 'password'}
+                  value={formData.rapidApi?.key || ''}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      rapidApi: {
+                        ...formData.rapidApi,
+                        key: e.target.value,
+                      },
+                    })
+                  }
+                  placeholder="Enter RapidAPI key"
+                />
+              )}
+
+              {disclosure === 'public' && (
+                <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700">
+                  <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
+                    🔒 RapidAPI key is hidden in public mode
+                  </p>
+                </div>
+              )}
+            </div>
+          </SettingsSection>
+        )}
+
+        {activeTab === 'inspiration' && (
+          <SettingsSection title="Inspiration Cache Settings" icon={Lightbulb}>
+            <div className="space-y-6">
+              <div className="p-4 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-700 rounded-xl">
+                <div className="flex items-start gap-3">
+                  <Lightbulb className="w-5 h-5 text-purple-600 dark:text-purple-400 mt-0.5" />
+                  <div>
+                    <h4 className="text-sm font-semibold text-purple-800 dark:text-purple-300 mb-1">
+                      Content Inspiration
+                    </h4>
+                    <p className="text-xs text-purple-700 dark:text-purple-400">
+                      Configure cache durations for inspiration content and trending topics from various sources.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <InputField
+                  label="Cache TTL (seconds)"
+                  type="number"
+                  value={formData.inspiration?.cacheTTL || 86400}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      inspiration: {
+                        ...formData.inspiration,
+                        cacheTTL: parseInt(e.target.value),
+                      },
+                    })
+                  }
+                  placeholder="86400"
+                />
+
+                <InputField
+                  label="Trends Cache TTL (seconds)"
+                  type="number"
+                  value={formData.inspiration?.trendsCacheTTL || 3600}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      inspiration: {
+                        ...formData.inspiration,
+                        trendsCacheTTL: parseInt(e.target.value),
+                      },
+                    })
+                  }
+                  placeholder="3600"
+                />
+              </div>
+
+              <div className="p-4 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-xl border border-purple-200/20 dark:border-purple-700/20">
+                <h5 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">Cache Duration Reference:</h5>
+                <ul className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
+                  <li>• 3600 seconds = 1 hour</li>
+                  <li>• 86400 seconds = 24 hours (1 day)</li>
+                  <li>• 604800 seconds = 7 days (1 week)</li>
+                </ul>
+              </div>
             </div>
           </SettingsSection>
         )}
