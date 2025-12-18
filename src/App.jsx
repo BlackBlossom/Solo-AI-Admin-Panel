@@ -13,6 +13,8 @@ import Posts from './pages/Posts';
 import Analytics from './pages/Analytics';
 import Settings from './pages/Settings';
 import ActivityLogs from './pages/ActivityLogs';
+import Notifications from './pages/Notifications';
+import Legal from './pages/Legal';
 
 function App() {
   return (
@@ -109,6 +111,26 @@ function App() {
               element={
                 <ProtectedRoute requiredRole="superadmin">
                   <ActivityLogs />
+                </ProtectedRoute>
+              } 
+            />
+            
+            {/* Notifications - Requires superadmin role */}
+            <Route 
+              path="notifications" 
+              element={
+                <ProtectedRoute requiredRole="superadmin">
+                  <Notifications />
+                </ProtectedRoute>
+              } 
+            />
+            
+            {/* Legal Content - Requires superadmin role */}
+            <Route 
+              path="legal" 
+              element={
+                <ProtectedRoute requiredRole="superadmin">
+                  <Legal />
                 </ProtectedRoute>
               } 
             />
