@@ -3,14 +3,15 @@ import { motion } from 'framer-motion';
 import { 
   Users, 
   Video, 
-  FileText, 
-  Image as ImageIcon,
+  Bell, 
+  Shield,
   TrendingUp,
   Activity,
   Clock,
   AlertCircle,
   ArrowUp,
-  BarChart3
+  BarChart3,
+  ChevronLeft
 } from 'lucide-react';
 import { dashboardService } from '../services/dashboardService';
 import Card from '../components/ui/Card';
@@ -18,15 +19,27 @@ import Loader from '../components/ui/Loader';
 import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
 import toast from 'react-hot-toast';
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend } from 'recharts';
 
 const Dashboard = () => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [selectedYear, setSelectedYear] = useState(2025);
+  const [chartView, setChartView] = useState('year'); // 'year', 'month', 'day'
+  const [selectedMonth, setSelectedMonth] = useState(null);
+  const [selectedDay, setSelectedDay] = useState(null);
 
   useEffect(() => {
     fetchStats();
   }, []);
+
+  // Ensure selectedYear is valid when stats change
+  useEffect(() => {
+    const availableYears = stats?.users?.yearsWithUsers || [];
+    if (availableYears.length > 0 && !availableYears.includes(selectedYear)) {
+      setSelectedYear(availableYears[0]);
+    }
+  }, [stats, selectedYear]);
 
   const fetchStats = async () => {
     try {
@@ -51,6 +64,56 @@ const Dashboard = () => {
         post.platforms?.some(p => p.status === 'published')
       ).length;
 
+      // Process users data to get monthly breakdown by year
+      const usersArray = response.data?.recent?.users || [];
+      const usersByYearMonth = {};
+      const usersByYearMonthDay = {};
+      const usersByYearMonthDayHour = {};
+      const yearsWithUsers = new Set();
+
+      usersArray.forEach(user => {
+        const date = new Date(user.createdAt);
+        const year = date.getFullYear();
+        const month = date.getMonth(); // 0-11
+        const day = date.getDate(); // 1-31
+        const hour = date.getHours(); // 0-23
+        
+        yearsWithUsers.add(year);
+        
+        // Track monthly data
+        if (!usersByYearMonth[year]) {
+          usersByYearMonth[year] = Array(12).fill(0);
+        }
+        usersByYearMonth[year][month]++;
+        
+        // Track daily data
+        if (!usersByYearMonthDay[year]) {
+          usersByYearMonthDay[year] = {};
+        }
+        if (!usersByYearMonthDay[year][month]) {
+          usersByYearMonthDay[year][month] = {};
+        }
+        if (!usersByYearMonthDay[year][month][day]) {
+          usersByYearMonthDay[year][month][day] = 0;
+        }
+        usersByYearMonthDay[year][month][day]++;
+        
+        // Track hourly data
+        if (!usersByYearMonthDayHour[year]) {
+          usersByYearMonthDayHour[year] = {};
+        }
+        if (!usersByYearMonthDayHour[year][month]) {
+          usersByYearMonthDayHour[year][month] = {};
+        }
+        if (!usersByYearMonthDayHour[year][month][day]) {
+          usersByYearMonthDayHour[year][month][day] = {};
+        }
+        if (!usersByYearMonthDayHour[year][month][day][hour]) {
+          usersByYearMonthDayHour[year][month][day][hour] = 0;
+        }
+        usersByYearMonthDayHour[year][month][day][hour]++;
+      });
+
       const statsData = {
         users: {
           total: response.data?.stats?.totalUsers || 0,
@@ -59,12 +122,24 @@ const Dashboard = () => {
           growth: {
             percentage: 0,
             trend: 'up'
-          }
+          },
+          byYearMonth: usersByYearMonth,
+          byYearMonthDay: usersByYearMonthDay,
+          byYearMonthDayHour: usersByYearMonthDayHour,
+          yearsWithUsers: Array.from(yearsWithUsers).sort((a, b) => b - a)
         },
         videos: {
           total: response.data?.stats?.totalVideos || 0,
           completed: response.data?.stats?.totalVideos || 0,
           processing: 0
+        },
+        notifications: {
+          total: response.data?.stats?.totalNotificationsSent || 0,
+          sent: response.data?.stats?.totalNotificationsSent || 0,
+        },
+        admins: {
+          total: response.data?.stats?.totalAdmins || 0,
+          active: response.data?.stats?.totalAdmins || 0,
         },
         posts: {
           total: postsArray.length,
@@ -140,19 +215,19 @@ const Dashboard = () => {
       iconBg: 'from-cyan-500/20 to-blue-500/20',
     },
     {
-      title: 'Total Posts',
-      value: stats.posts?.total?.toLocaleString() || '0',
-      icon: FileText,
+      title: 'Total Notifications',
+      value: stats.notifications?.total?.toLocaleString() || '0',
+      icon: Bell,
       gradient: 'from-emerald-500 to-green-500',
-      subtitle: `${stats.posts?.published?.toLocaleString() || 0} published`,
+      subtitle: `${stats.notifications?.sent?.toLocaleString() || 0} sent`,
       iconBg: 'from-emerald-500/20 to-green-500/20',
     },
     {
-      title: 'Total Media',
-      value: stats.media?.total?.toLocaleString() || '0',
-      icon: ImageIcon,
+      title: 'Total Admins',
+      value: stats.admins?.total?.toLocaleString() || '0',
+      icon: Shield,
       gradient: 'from-amber-500 to-orange-500',
-      subtitle: stats.media?.totalStorage?.formatted || '0 GB storage',
+      subtitle: `${stats.admins?.active?.toLocaleString() || 0} active`,
       iconBg: 'from-amber-500/20 to-orange-500/20',
     },
   ];
@@ -166,6 +241,98 @@ const Dashboard = () => {
     : [];
 
   const COLORS = ['#7E29F0', '#06B6D4', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'];
+
+  // Get available years (only years with at least 1 user)
+  const availableYears = stats?.users?.yearsWithUsers || [];
+
+  // Get chart data for selected year
+  const getMonthlyData = (year) => {
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const monthlyData = stats.users?.byYearMonth?.[year] || Array(12).fill(0);
+    
+    return monthNames.map((month, index) => ({
+      month,
+      monthIndex: index,
+      users: monthlyData[index] || 0
+    }));
+  };
+
+  // Get day-wise data for a specific month
+  const getDailyData = (year, monthIndex) => {
+    const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
+    const dailyDataByDay = stats.users?.byYearMonthDay?.[year]?.[monthIndex] || {};
+    
+    const dailyData = Array.from({ length: daysInMonth }, (_, i) => {
+      const day = i + 1;
+      const users = dailyDataByDay[day] || 0;
+      return { day, users };
+    });
+    return dailyData;
+  };
+
+  // Get hourly data for a specific day
+  const getHourlyData = (year, monthIndex, day) => {
+    const hourlyDataByHour = stats.users?.byYearMonthDayHour?.[year]?.[monthIndex]?.[day] || {};
+    
+    const hourlyData = Array.from({ length: 24 }, (_, i) => {
+      const hour = `${i.toString().padStart(2, '0')}:00`;
+      const users = hourlyDataByHour[i] || 0;
+      return { hour, users };
+    });
+    return hourlyData;
+  };
+
+  // Handle bar click to drill down
+  const handleBarClick = (data) => {
+    if (chartView === 'year') {
+      setSelectedMonth(data.monthIndex);
+      setChartView('month');
+    } else if (chartView === 'month') {
+      setSelectedDay(data.day);
+      setChartView('day');
+    }
+  };
+
+  // Handle back navigation
+  const handleBackClick = () => {
+    if (chartView === 'day') {
+      setChartView('month');
+      setSelectedDay(null);
+    } else if (chartView === 'month') {
+      setChartView('year');
+      setSelectedMonth(null);
+    }
+  };
+
+  // Get current chart data based on view
+  const getChartData = () => {
+    if (chartView === 'year') {
+      return getMonthlyData(selectedYear);
+    } else if (chartView === 'month') {
+      return getDailyData(selectedYear, selectedMonth);
+    } else {
+      return getHourlyData(selectedYear, selectedMonth, selectedDay);
+    }
+  };
+
+  // Get chart title based on view
+  const getChartTitle = () => {
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    if (chartView === 'year') {
+      return `Users Per Month (${selectedYear})`;
+    } else if (chartView === 'month') {
+      return `Users Per Day (${monthNames[selectedMonth]} ${selectedYear})`;
+    } else {
+      return `Users Per Hour (${monthNames[selectedMonth]} ${selectedDay}, ${selectedYear})`;
+    }
+  };
+
+  // Get x-axis key based on view
+  const getXAxisKey = () => {
+    if (chartView === 'year') return 'month';
+    if (chartView === 'month') return 'day';
+    return 'hour';
+  };
 
   return (
     <div className="min-h-screen pb-24">
@@ -317,83 +484,116 @@ const Dashboard = () => {
           </motion.div>
         )}
 
-        {/* System Health - Only show real data */}
+        {/* Users Per Month Chart */}
+        {availableYears.length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
         >
-          <div className="backdrop-blur-xl bg-white/50 dark:bg-gray-900/50 border border-purple-500/20 rounded-2xl p-6 shadow-xl hover:shadow-2xl transition-all duration-300 h-full">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">System Status</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Current system metrics</p>
+          <div className="backdrop-blur-xl bg-white/50 dark:bg-gray-900/50 border border-purple-500/20 rounded-2xl p-6 shadow-xl hover:shadow-2xl transition-all duration-300 h-full flex flex-col">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                {chartView !== 'year' && (
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={handleBackClick}
+                    className="p-2 rounded-lg bg-white/50 dark:bg-gray-800/50 text-gray-700 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-800 border border-purple-200 dark:border-purple-700/50 transition-all duration-300"
+                  >
+                    <ChevronLeft size={18} />
+                  </motion.button>
+                )}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{getChartTitle()}</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    {chartView === 'year' ? 'Monthly user registration trend' : 
+                     chartView === 'month' ? 'Click on a day to see hourly data' : 
+                     'Hourly user registration data'}
+                  </p>
+                </div>
               </div>
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/20 border border-emerald-500/30">
-                <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-sm font-medium text-emerald-400">Online</span>
-              </div>
+              {chartView === 'year' && (
+                <div className="flex gap-2">
+                  {availableYears.map((year) => (
+                    <motion.button
+                      key={year}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => {
+                        setSelectedYear(year);
+                        setChartView('year');
+                        setSelectedMonth(null);
+                        setSelectedDay(null);
+                      }}
+                      className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all duration-300 ${
+                        selectedYear === year
+                          ? 'bg-gradient-to-r from-[#7E29F0] to-[#561E97] text-white shadow-lg shadow-purple-500/50'
+                          : 'bg-white/50 dark:bg-gray-800/50 text-gray-700 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-800 border border-purple-200 dark:border-purple-700/50'
+                      }`}
+                    >
+                      {year}
+                    </motion.button>
+                  ))}
+                </div>
+              )}
             </div>
-
-            <div className="space-y-4">
-              {stats.systemHealth?.apiResponseTime > 0 && (
-                <div className="bg-white/50 dark:bg-gray-800/50 rounded-xl p-4 border border-purple-200 dark:border-purple-700/50">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <TrendingUp className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                      <p className="text-sm text-gray-700 dark:text-gray-300">API Response Time</p>
-                    </div>
-                    <p className="text-lg font-bold text-gray-900 dark:text-white">
-                      {stats.systemHealth.apiResponseTime}ms
-                    </p>
-                  </div>
-                </div>
-              )}
-              
-              {stats.systemHealth?.databaseResponseTime > 0 && (
-                <div className="bg-white/50 dark:bg-gray-800/50 rounded-xl p-4 border border-purple-200 dark:border-purple-700/50">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Activity className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
-                      <p className="text-sm text-gray-700 dark:text-gray-300">Database Response</p>
-                    </div>
-                    <p className="text-lg font-bold text-gray-900 dark:text-white">
-                      {stats.systemHealth.databaseResponseTime}ms
-                    </p>
-                  </div>
-                </div>
-              )}
-              
-              {stats.systemHealth?.uptime >= 0 && (
-                <div className="bg-white/50 dark:bg-gray-800/50 rounded-xl p-4 border border-purple-200 dark:border-purple-700/50">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-violet-600 dark:text-violet-400" />
-                      <p className="text-sm text-gray-700 dark:text-gray-300">System Uptime</p>
-                    </div>
-                    <p className="text-lg font-bold text-gray-900 dark:text-white">
-                      {stats.systemHealth.uptime < 60 
-                        ? `${stats.systemHealth.uptime}s`
-                        : stats.systemHealth.uptime < 3600
-                        ? `${Math.floor(stats.systemHealth.uptime / 60)}m`
-                        : stats.systemHealth.uptime < 86400
-                        ? `${Math.floor(stats.systemHealth.uptime / 3600)}h`
-                        : `${Math.floor(stats.systemHealth.uptime / 86400)}d`
-                      }
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {stats.systemHealth?.apiResponseTime === 0 && stats.systemHealth?.databaseResponseTime === 0 && stats.systemHealth?.uptime === 0 && (
-                <div className="text-center py-8">
-                  <Activity className="h-12 w-12 mx-auto mb-3 text-gray-400 dark:text-gray-600" />
-                  <p className="text-gray-500 dark:text-gray-400">System metrics unavailable</p>
-                </div>
-              )}
+            <div className="flex-1 min-h-0">
+              <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={getChartData()}
+                margin={{ top: 5, right: 5, left: -20, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(126, 41, 240, 0.1)" />
+                <XAxis 
+                  dataKey={getXAxisKey()} 
+                  stroke="#9CA3AF"
+                  tick={{ fill: '#6B7280', fontSize: 12 }}
+                />
+                <YAxis 
+                  stroke="#9CA3AF"
+                  tick={{ fill: '#6B7280', fontSize: 12 }}
+                />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: 'rgba(255, 255, 255, 0.95)', 
+                    border: '1px solid rgba(126, 41, 240, 0.3)',
+                    borderRadius: '12px',
+                    padding: '8px 12px',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                  }}
+                  itemStyle={{
+                    color: '#7E29F0',
+                    fontWeight: '600',
+                    fontSize: '14px'
+                  }}
+                  labelStyle={{
+                    color: '#374151',
+                    fontWeight: '500',
+                    marginBottom: '4px'
+                  }}
+                  cursor={{ fill: 'rgba(126, 41, 240, 0.05)' }}
+                />
+                <Bar 
+                  dataKey="users" 
+                  fill="url(#colorGradient)" 
+                  radius={[8, 8, 0, 0]}
+                  maxBarSize={50}
+                  onClick={handleBarClick}
+                  style={{ cursor: chartView !== 'day' ? 'pointer' : 'default' }}
+                />
+                <defs>
+                  <linearGradient id="colorGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#7E29F0" stopOpacity={1} />
+                    <stop offset="100%" stopColor="#561E97" stopOpacity={1} />
+                  </linearGradient>
+                </defs>
+              </BarChart>
+            </ResponsiveContainer>
             </div>
           </div>
         </motion.div>
+        )}
       </div>
 
       {/* Recent Activity */}

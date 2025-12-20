@@ -31,6 +31,7 @@ import {
   Image as ImageIcon
 } from 'lucide-react';
 import { notificationService } from '../services/notificationService';
+import { imageService } from '../services/imageService';
 import Pagination from '../components/ui/Pagination';
 import SearchBar from '../components/ui/SearchBar';
 import Modal from '../components/ui/Modal';
@@ -88,12 +89,30 @@ const Notifications = () => {
   const [sendLoading, setSendLoading] = useState(false);
   const [targetCount, setTargetCount] = useState(null);
   const [countLoading, setCountLoading] = useState(false);
+  
+  // Image upload state
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [imageUploading, setImageUploading] = useState(false);
+  const [imageLoading, setImageLoading] = useState(false);
 
   // Test notification state
   const [testToken, setTestToken] = useState('');
   const [testLoading, setTestLoading] = useState(false);
 
+  
   const location = useLocation();
+
+  // Scroll to top when component mounts or location changes
+  useEffect(() => {
+    // Find the scrollable main container and scroll it to top
+    const mainElement = document.querySelector('main');
+    if (mainElement) {
+      mainElement.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    // Also scroll window as fallback
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [location.pathname]);
 
   // Fetch notifications
   const fetchNotifications = async () => {
@@ -193,6 +212,89 @@ const Notifications = () => {
     } finally {
       setCountLoading(false);
     }
+  };
+
+  // Handle image file selection
+  const handleImageSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        toast.error('Please select a valid image file');
+        return;
+      }
+      
+      // Validate file size (10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error('Image size must be less than 10MB');
+        return;
+      }
+
+      setImageFile(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Upload image to server
+  const handleImageUpload = async () => {
+    if (!imageFile) return;
+
+    try {
+      setImageUploading(true);
+      const data = await imageService.upload(imageFile);
+      
+      console.log('Image uploaded:', data);
+      
+      // Update form with the public URL
+      setSendForm(prev => ({ ...prev, imageUrl: data.data.url }));
+      toast.success('Image uploaded successfully!');
+      
+      // Clear file input but keep preview until server image loads
+      setImageFile(null);
+      
+      // Don't clear imagePreview immediately - it will be replaced by the server URL
+      setTimeout(() => {
+        setImagePreview(null);
+      }, 1000);
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      toast.error(error.message || 'Failed to upload image');
+    } finally {
+      setImageUploading(false);
+    }
+  };
+
+  // Remove uploaded image
+  const handleRemoveImage = async () => {
+    if (!sendForm.imageUrl) return;
+
+    try {
+      // Extract filename from URL
+      const filename = sendForm.imageUrl.split('/').pop();
+      
+      await imageService.delete(filename);
+
+      // Clear image from form
+      setSendForm(prev => ({ ...prev, imageUrl: '' }));
+      setImagePreview(null);
+      setImageFile(null);
+      toast.success('Image removed successfully!');
+    } catch (error) {
+      console.error('Error removing image:', error);
+      toast.error(error.response?.data?.message || 'Failed to remove image');
+    }
+  };
+
+  // Clear image preview without deleting from server
+  const handleClearImagePreview = () => {
+    setImageFile(null);
+    setImagePreview(null);
   };
 
   // Send notification
@@ -885,6 +987,8 @@ const Notifications = () => {
         onClose={() => {
           setIsSendModalOpen(false);
           setTargetCount(null);
+          setImageFile(null);
+          setImagePreview(null);
         }}
         title={
           <div className="flex items-center gap-3">
@@ -1070,20 +1174,140 @@ const Notifications = () => {
               </div>
             </div>
           )}
-
-          {/* Image URL */}
-          <div className="space-y-2">
+          <div className="space-y-3">
             <label className="flex items-center gap-2 text-gray-700 dark:text-gray-300 text-sm font-semibold">
               <ImageIcon className="w-4 h-4" />
-              Image URL <span className="text-gray-400 text-xs font-normal">(Optional)</span>
+              Notification Image <span className="text-gray-400 text-xs font-normal">(Optional)</span>
             </label>
-            <input
-              type="text"
-              value={sendForm.imageUrl}
-              onChange={(e) => setSendForm(prev => ({ ...prev, imageUrl: e.target.value }))}
-              className="w-full px-4 py-3 bg-white/50 dark:bg-gray-800/50 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all outline-none placeholder-gray-400"
-              placeholder="https://example.com/image.jpg"
-            />
+
+            {/* Show uploaded image or preview */}
+            {(sendForm.imageUrl || imagePreview) && (
+              <div className="relative group">
+                <div className="relative w-full h-48 bg-gray-100 dark:bg-gray-800 rounded-xl overflow-hidden border-2 border-gray-300 dark:border-gray-600">
+                  {imageLoading && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-gray-800">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
+                    </div>
+                  )}
+                  <img
+                    src={sendForm.imageUrl || imagePreview}
+                    alt="Notification preview"
+                    className="w-full h-full object-cover"
+                    onLoadStart={() => {
+                      setImageLoading(true);
+                    }}
+                    onError={(e) => {
+                      console.error('Image failed to load:', e.target.src);
+                      setImageLoading(false);
+                      toast.error('Failed to load image preview');
+                    }}
+                    onLoad={() => {
+                      console.log('Image loaded successfully:', sendForm.imageUrl || imagePreview);
+                      setImageLoading(false);
+                    }}
+                  />
+                  {/* Overlay on hover */}
+                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                    {sendForm.imageUrl && (
+                      <Button
+                        onClick={handleRemoveImage}
+                        size="sm"
+                        className="flex items-center gap-2 bg-red-500 text-white hover:bg-red-600"
+                      >
+                        <XCircle size={16} />
+                        Remove from Server
+                      </Button>
+                    )}
+                    {imagePreview && !sendForm.imageUrl && (
+                      <Button
+                        onClick={handleClearImagePreview}
+                        size="sm"
+                        className="flex items-center gap-2 bg-gray-700 text-white hover:bg-gray-600"
+                      >
+                        <XCircle size={16} />
+                        Clear
+                      </Button>
+                    )}
+                  </div>
+                </div>
+                {sendForm.imageUrl && (
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 break-all">
+                    {sendForm.imageUrl}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Upload controls */}
+            {!sendForm.imageUrl && (
+              <div className="space-y-3">
+                {/* File input */}
+                <div className="flex gap-2">
+                  <div className="flex-1">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageSelect}
+                      className="hidden"
+                      id="notification-image-upload"
+                      disabled={imageUploading}
+                    />
+                    <label
+                      htmlFor="notification-image-upload"
+                      className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-white/50 dark:bg-gray-800/50 border-2 border-dashed border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:border-purple-500 dark:hover:border-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all cursor-pointer"
+                    >
+                      <ImageIcon size={18} />
+                      <span>{imageFile ? imageFile.name : 'Choose Image'}</span>
+                    </label>
+                  </div>
+                  
+                  {/* Upload button */}
+                  {imageFile && !sendForm.imageUrl && (
+                    <Button
+                      onClick={handleImageUpload}
+                      disabled={imageUploading}
+                      className="flex items-center gap-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed px-6"
+                    >
+                      {imageUploading ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                          <span>Uploading...</span>
+                        </>
+                      ) : (
+                        <>
+                          <ImageIcon size={16} />
+                          <span>Upload</span>
+                        </>
+                      )}
+                    </Button>
+                  )}
+                </div>
+
+                {/* Manual URL input as alternative */}
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-gray-300 dark:border-gray-600"></div>
+                  </div>
+                  <div className="relative flex justify-center text-xs">
+                    <span className="px-2 bg-transparent text-gray-500">or enter URL manually</span>
+                  </div>
+                </div>
+
+                <input
+                  type="text"
+                  value={sendForm.imageUrl}
+                  onChange={(e) => setSendForm(prev => ({ ...prev, imageUrl: e.target.value }))}
+                  className="w-full px-4 py-3 bg-white/50 dark:bg-gray-800/50 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all outline-none placeholder-gray-400"
+                  placeholder="https://example.com/image.jpg"
+                  disabled={!!imageFile}
+                />
+              </div>
+            )}
+
+            <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+              <Info className="w-3 h-3" />
+              Recommended: 1024x512px, max 10MB (jpg, png, gif, webp)
+            </p>
           </div>
 
           {/* Deep Link */}

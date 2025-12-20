@@ -27,6 +27,7 @@ import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
 import toast from 'react-hot-toast';
+import { useLocation } from 'react-router-dom';
 
 const Legal = () => {
   const [contents, setContents] = useState([]);
@@ -53,6 +54,19 @@ const Legal = () => {
     { value: 'terms_of_use', label: 'Terms of Use', icon: '📋', description: 'Service terms and conditions' },
     { value: 'faq', label: 'FAQ', icon: '❓', description: 'Frequently asked questions' }
   ];
+  
+  const location = useLocation();
+
+  // Scroll to top when component mounts or location changes
+  useEffect(() => {
+    // Find the scrollable main container and scroll it to top
+    const mainElement = document.querySelector('main');
+    if (mainElement) {
+      mainElement.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    // Also scroll window as fallback
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [location.pathname]);
 
   useEffect(() => {
     fetchContents();
