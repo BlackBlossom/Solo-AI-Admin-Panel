@@ -20,15 +20,15 @@ import { useAuth } from "../context/AuthContext";
 
 const allMenuItems = [
   { path: "/", label: "Dashboard", icon: LayoutDashboard, requireAuth: true },
-  { path: "/media", label: "Media", icon: Image, requiredPermission: "media" },
+  // { path: "/media", label: "Media", icon: Image, requiredPermission: "media" },
   { path: "/settings", label: "Settings", icon: Settings, requiredPermission: "settings" },
   { path: "/activity-logs", label: "Activity", icon: ClipboardList, requiredRole: "superadmin" },
-  { path: "/notifications", label: "Notifications", icon: Bell, requiredRole: "superadmin" },
-  { path: "/legal", label: "Legal", icon: Scale, requiredRole: "superadmin" },
   { path: "/users", label: "Users", icon: Users, requiredPermission: "users" },
   { path: "/admins", label: "Admins", icon: Shield, requiredRole: "superadmin" },
-  { path: "/posts", label: "Posts", icon: FileText, requiredPermission: "posts" },
   { path: "/videos", label: "Videos", icon: Video, requiredPermission: "videos" },
+  { path: "/notifications", label: "Notifications", icon: Bell, requiredRole: "superadmin" },
+  { path: "/legal", label: "Legal", icon: Scale, requiredRole: "superadmin" },
+  // { path: "/posts", label: "Posts", icon: FileText, requiredPermission: "posts" },
 //   { path: "/analytics", label: "Analytics", icon: BarChart3, requiredPermission: "analytics" },
 ];
 

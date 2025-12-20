@@ -35,6 +35,7 @@ const Videos = () => {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [previewModalOpen, setPreviewModalOpen] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const location = useLocation();
 
   // Scroll to top when component mounts or location changes
@@ -87,6 +88,7 @@ const Videos = () => {
 
   const handleDelete = async () => {
     try {
+      setDeleteLoading(true);
       await videoService.delete(selectedVideo._id);
       toast.success('Video deleted successfully');
       setDeleteModalOpen(false);
@@ -94,6 +96,8 @@ const Videos = () => {
       fetchVideos();
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to delete video');
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -677,10 +681,20 @@ const Videos = () => {
             </button>
             <button
               onClick={handleDelete}
-              className="flex-1 px-6 py-3 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 flex items-center justify-center gap-2"
+              disabled={deleteLoading}
+              className="flex-1 px-6 py-3 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
-              <Trash2 size={18} />
-              Delete Video
+              {deleteLoading ? (
+                <>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 size={18} />
+                  Delete Video
+                </>
+              )}
             </button>
           </div>
         </div>

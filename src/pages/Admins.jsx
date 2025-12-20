@@ -73,6 +73,11 @@ const Admins = () => {
     reason: ''
   });
 
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [createLoading, setCreateLoading] = useState(false);
+  const [editLoading, setEditLoading] = useState(false);
+  const [restrictLoading, setRestrictLoading] = useState(false);
+
   const location = useLocation();
 
   // Available permissions
@@ -156,6 +161,7 @@ const Admins = () => {
     }
 
     try {
+      setCreateLoading(true);
       await adminService.create(formData);
       toast.success('Admin created successfully');
       setCreateModalOpen(false);
@@ -163,6 +169,8 @@ const Admins = () => {
       fetchAdmins();
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to create admin');
+    } finally {
+      setCreateLoading(false);
     }
   };
 
@@ -170,6 +178,7 @@ const Admins = () => {
     e.preventDefault();
     
     try {
+      setEditLoading(true);
       const updateData = {
         name: formData.name,
         email: formData.email,
@@ -184,6 +193,8 @@ const Admins = () => {
       fetchAdmins();
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to update admin');
+    } finally {
+      setEditLoading(false);
     }
   };
 
@@ -194,6 +205,7 @@ const Admins = () => {
     }
 
     try {
+      setRestrictLoading(true);
       await adminService.restrict(selectedAdmin._id, restrictData);
       toast.success(restrictData.isActive ? 'Admin activated successfully' : 'Admin restricted successfully');
       setRestrictModalOpen(false);
@@ -201,17 +213,22 @@ const Admins = () => {
       fetchAdmins();
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to update admin status');
+    } finally {
+      setRestrictLoading(false);
     }
   };
 
   const handleDeleteAdmin = async () => {
     try {
+      setDeleteLoading(true);
       await adminService.delete(selectedAdmin._id);
       toast.success('Admin deleted successfully');
       setDeleteModalOpen(false);
       fetchAdmins();
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to delete admin');
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -851,11 +868,21 @@ const Admins = () => {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               type="submit"
-              className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-semibold py-4 rounded-xl shadow-2xl shadow-purple-500/50 border border-purple-400/30 transition-all"
+              disabled={createLoading}
+              className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-semibold py-4 rounded-xl shadow-2xl shadow-purple-500/50 border border-purple-400/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <span className="flex items-center justify-center gap-2">
-                <Plus className="w-5 h-5" />
-                Create Admin
+                {createLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                    Creating...
+                  </>
+                ) : (
+                  <>
+                    <Plus className="w-5 h-5" />
+                    Create Admin
+                  </>
+                )}
               </span>
             </motion.button>
             <motion.button
@@ -985,11 +1012,21 @@ const Admins = () => {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               type="submit"
-              className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-semibold py-4 rounded-xl shadow-2xl shadow-purple-500/50 border border-purple-400/30 transition-all"
+              disabled={editLoading}
+              className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-semibold py-4 rounded-xl shadow-2xl shadow-purple-500/50 border border-purple-400/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <span className="flex items-center justify-center gap-2">
-                <CheckCircle className="w-5 h-5" />
-                Update Admin
+                {editLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                    Updating...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="w-5 h-5" />
+                    Update Admin
+                  </>
+                )}
               </span>
             </motion.button>
             <motion.button
@@ -1073,15 +1110,25 @@ const Admins = () => {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={handleRestrictAdmin}
-              className={`flex-1 text-white font-semibold py-4 rounded-xl shadow-2xl border transition-all ${
+              disabled={restrictLoading}
+              className={`flex-1 text-white font-semibold py-4 rounded-xl shadow-2xl border transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
                 restrictData.isActive
                   ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 border-green-400/30 shadow-green-500/50'
                   : 'bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 border-orange-400/30 shadow-orange-500/50'
               }`}
             >
               <span className="flex items-center justify-center gap-2">
-                {restrictData.isActive ? <Unlock className="w-5 h-5" /> : <Lock className="w-5 h-5" />}
-                {restrictData.isActive ? 'Activate' : 'Restrict'}
+                {restrictLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                    {restrictData.isActive ? 'Activating...' : 'Restricting...'}
+                  </>
+                ) : (
+                  <>
+                    {restrictData.isActive ? <Unlock className="w-5 h-5" /> : <Lock className="w-5 h-5" />}
+                    {restrictData.isActive ? 'Activate' : 'Restrict'}
+                  </>
+                )}
               </span>
             </motion.button>
             <motion.button
@@ -1136,11 +1183,21 @@ const Admins = () => {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={handleDeleteAdmin}
-              className="flex-1 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-semibold py-4 rounded-xl shadow-2xl shadow-red-500/50 border border-red-400/30 transition-all"
+              disabled={deleteLoading}
+              className="flex-1 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-semibold py-4 rounded-xl shadow-2xl shadow-red-500/50 border border-red-400/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <span className="flex items-center justify-center gap-2">
-                <Trash2 className="w-5 h-5" />
-                Delete Permanently
+                {deleteLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-5 h-5" />
+                    Delete Permanently
+                  </>
+                )}
               </span>
             </motion.button>
             <motion.button

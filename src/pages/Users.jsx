@@ -26,6 +26,8 @@ const Users = () => {
   const [banModalOpen, setBanModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [banLoading, setBanLoading] = useState(false);
   const [banData, setBanData] = useState({
     status: 'banned',
     reason: '',
@@ -97,6 +99,7 @@ const Users = () => {
     }
 
     try {
+      setBanLoading(true);
       const payload = {
         status: banData.status,
         reason: banData.reason
@@ -119,6 +122,8 @@ const Users = () => {
       fetchUsers();
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to ban user');
+    } finally {
+      setBanLoading(false);
     }
   };
 
@@ -134,6 +139,7 @@ const Users = () => {
 
   const handleDeleteUser = async () => {
     try {
+      setDeleteLoading(true);
       await userService.delete(selectedUser._id);
       toast.success('User deleted successfully');
       setDeleteModalOpen(false);
@@ -141,6 +147,8 @@ const Users = () => {
       fetchUsers();
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to delete user');
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -636,7 +644,7 @@ const Users = () => {
                 </p>
               </button>
 
-              <button
+              {/* <button
                 onClick={() => setBanData({ ...banData, status: 'suspended' })}
                 className={`p-4 rounded-xl border-2 transition-all duration-300 ${
                   banData.status === 'suspended'
@@ -653,7 +661,7 @@ const Users = () => {
                 <p className="text-xs text-gray-500 dark:text-gray-400">
                   Restrict during investigation
                 </p>
-              </button>
+              </button> */}
             </div>
           </div>
 
@@ -762,15 +770,24 @@ const Users = () => {
             </button>
             <button
               onClick={handleBanUser}
-              disabled={!banData.reason.trim() || (!banData.isPermanent && !banData.duration)}
+              disabled={banLoading || !banData.reason.trim() || (!banData.isPermanent && !banData.duration)}
               className={`flex-1 px-6 py-3 bg-gradient-to-r ${
                 banData.status === 'banned' 
                   ? 'from-red-500 to-red-600 hover:from-red-600 hover:to-red-700' 
                   : 'from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700'
               } text-white rounded-xl font-semibold shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2`}
             >
-              <Ban size={18} />
-              {banData.status === 'banned' ? 'Ban' : 'Suspend'} User
+              {banLoading ? (
+                <>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  {banData.status === 'banned' ? 'Banning...' : 'Suspending...'}
+                </>
+              ) : (
+                <>
+                  <Ban size={18} />
+                  {banData.status === 'banned' ? 'Ban' : 'Suspend'} User
+                </>
+              )}
             </button>
           </div>
         </div>
@@ -1293,10 +1310,20 @@ const Users = () => {
             </button>
             <button
               onClick={handleDeleteUser}
-              className="flex-1 px-6 py-3 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 flex items-center justify-center gap-2"
+              disabled={deleteLoading}
+              className="flex-1 px-6 py-3 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
-              <Trash2 size={18} />
-              Permanently Delete
+              {deleteLoading ? (
+                <>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 size={18} />
+                  Permanently Delete
+                </>
+              )}
             </button>
           </div>
         </div>

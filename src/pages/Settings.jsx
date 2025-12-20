@@ -194,7 +194,7 @@ const Settings = () => {
   const tabs = [
     { id: 'app', label: 'Application', icon: SettingsIcon },
     { id: 'email', label: 'Email', icon: Mail },
-    { id: 'cloudinary', label: 'Cloudinary', icon: Cloud },
+    // { id: 'cloudinary', label: 'Cloudinary', icon: Cloud },
     { id: 'mongodb', label: 'Database', icon: Server },
     // { id: 'video', label: 'Video Upload', icon: Video },
     // { id: 'urls', label: 'URLs', icon: Globe },
@@ -685,7 +685,7 @@ const Settings = () => {
           </div>
         )}
 
-        {activeTab === 'cloudinary' && (
+        {/* {activeTab === 'cloudinary' && (
           <SettingsSection title="Cloudinary Settings" icon={Cloud}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <InputField
@@ -735,7 +735,7 @@ const Settings = () => {
               )}
             </div>
           </SettingsSection>
-        )}
+        )} */}
 
         {activeTab === 'mongodb' && (
           <SettingsSection title="Database Configuration" icon={Server}>

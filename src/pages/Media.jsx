@@ -261,6 +261,9 @@ const Media = () => {
   const [selectedMedia, setSelectedMedia] = useState(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [mediaToDelete, setMediaToDelete] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [uploadLoading, setUploadLoading] = useState(false);
+  const [toggleLoading, setToggleLoading] = useState(null); // Store ID of item being toggled
   const location = useLocation();
 
   // Scroll to top when component mounts or location changes
@@ -469,6 +472,7 @@ const Media = () => {
     }
 
     try {
+      setUploadLoading(true);
       const response = await mediaService.upload(formData);
       toast.success(response.message || 'Media uploaded successfully');
       setUploadModalOpen(false);
@@ -484,17 +488,22 @@ const Media = () => {
     } catch (error) {
       toast.error(error.response?.data?.message || 'Upload failed');
       console.error('Upload error:', error.response?.data);
+    } finally {
+      setUploadLoading(false);
     }
   };
 
   const handleToggleStatus = async (id, currentTitle) => {
     try {
+      setToggleLoading(id);
       const response = await mediaService.toggleStatus(id);
       toast.success(response.message || 'Status updated successfully');
       fetchMedia();
     } catch (error) {
       toast.error('Failed to update status');
       console.error('Toggle status error:', error);
+    } finally {
+      setToggleLoading(null);
     }
   };
 
@@ -507,6 +516,7 @@ const Media = () => {
     if (!mediaToDelete) return;
     
     try {
+      setDeleteLoading(true);
       const response = await mediaService.delete(mediaToDelete.id);
       toast.success(response.message || 'Media deleted successfully');
       setDeleteModalOpen(false);
@@ -516,6 +526,8 @@ const Media = () => {
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to delete media');
       console.error('Delete error:', error);
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -1101,10 +1113,15 @@ const Media = () => {
                         </button>
                         <button
                           onClick={() => handleToggleStatus(item._id, item.title)}
-                          className="px-3 py-2.5 text-sm bg-white/50 dark:bg-gray-800/50 border border-gray-200/50 dark:border-gray-700/50 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-white dark:hover:bg-gray-800 hover:scale-105 transition-all duration-300"
+                          disabled={toggleLoading === item._id}
+                          className="px-3 py-2.5 text-sm bg-white/50 dark:bg-gray-800/50 border border-gray-200/50 dark:border-gray-700/50 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-white dark:hover:bg-gray-800 hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                           title={item.isActive ? 'Deactivate' : 'Activate'}
                         >
-                          {item.isActive ? <ToggleRight size={18} /> : <ToggleLeft size={18} />}
+                          {toggleLoading === item._id ? (
+                            <div className="animate-spin rounded-full h-[18px] w-[18px] border-b-2 border-[#7E29F0]"></div>
+                          ) : (
+                            item.isActive ? <ToggleRight size={18} /> : <ToggleLeft size={18} />
+                          )}
                         </button>
                         <button
                           onClick={() => handleDelete(item._id, item.title)}
@@ -1506,13 +1523,21 @@ const Media = () => {
                   handleToggleStatus(selectedMedia._id, selectedMedia.title);
                   setMetadataModalOpen(false);
                 }}
-                className={`px-6 py-3 rounded-xl font-semibold shadow hover:shadow-lg hover:scale-105 transition-all duration-300 ${
+                disabled={toggleLoading === selectedMedia._id}
+                className={`px-6 py-3 rounded-xl font-semibold shadow hover:shadow-lg hover:scale-105 transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 ${
                   selectedMedia.isActive
                     ? 'bg-yellow-100 dark:bg-yellow-900/30 hover:bg-yellow-200 dark:hover:bg-yellow-900/50 text-yellow-700 dark:text-yellow-300 border border-yellow-300 dark:border-yellow-700'
                     : 'bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-900/50 text-green-700 dark:text-green-300 border border-green-300 dark:border-green-700'
                 }`}
               >
-                {selectedMedia.isActive ? 'Deactivate' : 'Activate'}
+                {toggleLoading === selectedMedia._id ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-current"></div>
+                    Updating...
+                  </>
+                ) : (
+                  selectedMedia.isActive ? 'Deactivate' : 'Activate'
+                )}
               </button>
               <button
                 onClick={() => {
@@ -1554,10 +1579,20 @@ const Media = () => {
             </button>
             <button
               onClick={handleUpload}
-              className="flex-1 px-6 py-3 bg-gradient-to-r from-[#7E29F0] to-[#561E97] hover:from-[#8E39FF] hover:to-[#6E2EA7] text-white rounded-xl font-semibold shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 flex items-center justify-center gap-2"
+              disabled={uploadLoading}
+              className="flex-1 px-6 py-3 bg-gradient-to-r from-[#7E29F0] to-[#561E97] hover:from-[#8E39FF] hover:to-[#6E2EA7] text-white rounded-xl font-semibold shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
-              <Upload size={18} />
-              Upload Media
+              {uploadLoading ? (
+                <>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  Uploading...
+                </>
+              ) : (
+                <>
+                  <Upload size={18} />
+                  Upload Media
+                </>
+              )}
             </button>
           </div>
         }
@@ -1802,10 +1837,20 @@ const Media = () => {
               </button>
               <button
                 onClick={confirmDelete}
-                className="flex-1 px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 flex items-center justify-center gap-2"
+                disabled={deleteLoading}
+                className="flex-1 px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
               >
-                <Trash2 size={18} />
-                Delete Permanently
+                {deleteLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 size={18} />
+                    Delete Permanently
+                  </>
+                )}
               </button>
             </div>
           </div>

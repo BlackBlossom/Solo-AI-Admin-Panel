@@ -36,14 +36,14 @@ function App() {
             <Route path="dashboard" element={<Dashboard />} />
             
             {/* Media - Requires 'media' permission */}
-            <Route 
+            {/* <Route 
               path="media" 
               element={
                 <ProtectedRoute requiredPermission="media">
                   <Media />
                 </ProtectedRoute>
               } 
-            />
+            /> */}
             
             {/* Users - Requires 'users' permission */}
             <Route 
@@ -76,14 +76,14 @@ function App() {
             />
             
             {/* Posts - Requires 'posts' permission */}
-            <Route 
+            {/* <Route 
               path="posts" 
               element={
                 <ProtectedRoute requiredPermission="posts">
                   <Posts />
                 </ProtectedRoute>
               } 
-            />
+            /> */}
             
             {/* Analytics - Requires 'analytics' permission */}
             {/* <Route 

@@ -40,6 +40,7 @@ const Posts = () => {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
   const [selectedPost, setSelectedPost] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const location = useLocation();
 
   // Scroll to top when component mounts or location changes
@@ -91,6 +92,7 @@ const Posts = () => {
 
   const handleDelete = async () => {
     try {
+      setDeleteLoading(true);
       await postService.delete(selectedPost._id);
       toast.success('Post deleted successfully');
       setDeleteModalOpen(false);
@@ -98,6 +100,8 @@ const Posts = () => {
       fetchPosts();
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to delete post');
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -911,10 +915,20 @@ const Posts = () => {
             </button>
             <button
               onClick={handleDelete}
-              className="flex-1 px-6 py-3 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 flex items-center justify-center gap-2"
+              disabled={deleteLoading}
+              className="flex-1 px-6 py-3 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
-              <Trash2 size={18} />
-              Delete Post
+              {deleteLoading ? (
+                <>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 size={18} />
+                  Delete Post
+                </>
+              )}
             </button>
           </div>
         </div>
