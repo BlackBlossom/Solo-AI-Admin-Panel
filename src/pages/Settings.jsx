@@ -69,7 +69,7 @@ const Settings = () => {
       clearTimeout(timeoutId);
       window.removeEventListener('resize', updateIndicator);
     };
-  }, [activeTab]);
+  }, [activeTab, loading]);
 
   const fetchSettings = async () => {
     setLoading(true);

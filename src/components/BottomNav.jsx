@@ -19,7 +19,7 @@ import {
 import { useAuth } from "../context/AuthContext";
 
 const allMenuItems = [
-  { path: "/", label: "Dashboard", icon: LayoutDashboard, requireAuth: true },
+  { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard, requireAuth: true },
   // { path: "/media", label: "Media", icon: Image, requiredPermission: "media" },
   { path: "/settings", label: "Settings", icon: Settings, requiredPermission: "settings" },
   { path: "/activity-logs", label: "Activity", icon: ClipboardList, requiredRole: "superadmin" },
@@ -114,31 +114,31 @@ export default function BottomNav() {
   const moreItems = menuItems.slice(visibleItemCount);
   const showMoreButton = moreItems.length > 1; // Only show More button if 2+ items remain
 
-  const renderNavItem = (item, isMobile = false) => {
+  const renderNavItem = (item, isMobile = false, isLastItem = false) => {
     const isActive = location.pathname === item.path;
 
     return (
-      <Link
-        key={item.path}
-        to={item.path}
-        onClick={() => setIsMenuOpen(false)}
-        className={`relative flex flex-col items-center justify-center gap-0.5 sm:gap-1 px-2 sm:px-3 py-2 rounded-xl sm:rounded-2xl transition-all duration-300 group ${
-          isMobile ? 'w-full' : 'flex-1'
-        } ${
-          isActive 
-            ? 'text-white' 
-            : 'text-gray-400 hover:text-purple-300'
-        }`}
-      >
+      <div key={item.path} className="w-full">
+        <Link
+          to={item.path}
+          onClick={() => setIsMenuOpen(false)}
+          className={`relative flex flex-col items-center justify-center gap-0.5 sm:gap-1 px-2 sm:px-3 py-2 rounded-xl sm:rounded-2xl transition-all duration-300 group ${
+            isMobile ? 'w-full' : 'flex-1'
+          } ${
+            isActive 
+              ? 'text-white' 
+              : 'text-gray-400 hover:text-purple-300'
+          }`}
+        >
         {/* Active background with gradient */}
-        {isActive && (
+        {/* {isActive && (
           <motion.div
             layoutId={isMobile ? "mobile-active-bg" : "active-bg"}
             className="absolute inset-0 bg-gradient-to-r from-purple-600 to-purple-500 rounded-xl sm:rounded-2xl shadow-lg shadow-purple-500/50"
             initial={false}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
           />
-        )}
+        )} */}
 
         {/* Content */}
         <div className="relative z-10 flex flex-col items-center gap-0.5 sm:gap-1">
@@ -152,13 +152,20 @@ export default function BottomNav() {
 
         {/* Active indicator dot */}
         {isActive && (
-          <motion.div
-            layoutId={isMobile ? "mobile-indicator" : "indicator"}
-            className="absolute -top-0.5 sm:-top-1 w-1 h-1 sm:w-1.5 sm:h-1.5 bg-white rounded-full shadow-lg"
-            initial={false}
-          />
+          <div className="absolute -bottom-0.25 sm:-bottom-0.25 w-1 h-1 sm:w-1.5 sm:h-1.5 bg-white rounded-full shadow-lg" />
         )}
       </Link>
+      
+      {/* Gradient divider - only show in dropdown menu and not for last item */}
+      {isMobile && !isLastItem && (
+        <div 
+          className="h-[1px] mx-2 my-1"
+          style={{
+            background: 'linear-gradient(to right, rgba(25, 8, 48, 0) 0%, rgba(168, 85, 247, 0.2) 50%, rgba(25, 8, 48, 0) 100%)'
+          }}
+        />
+      )}
+    </div>
     );
   };
 
@@ -193,9 +200,9 @@ export default function BottomNav() {
                   }`}
                 >
                   {/* Active background for More menu */}
-                  {(isMenuOpen || moreItems.some(item => item.path === location.pathname)) && (
+                  {/* {(isMenuOpen || moreItems.some(item => item.path === location.pathname)) && (
                     <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-purple-500 rounded-xl sm:rounded-2xl shadow-lg shadow-purple-500/50" />
-                  )}
+                  )} */}
                   
                   <div className="relative z-10 flex flex-col items-center gap-0.5 sm:gap-1">
                     <Menu className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -218,7 +225,7 @@ export default function BottomNav() {
                       
                       {/* Dropdown content */}
                       <div className="relative backdrop-blur-3xl bg-gradient-to-br from-[#190830]/85  to-[#190830]/85 border border-purple-500/30 rounded-2xl shadow-2xl p-2">
-                        {moreItems.map(item => renderNavItem(item, true))}
+                        {moreItems.map((item, index) => renderNavItem(item, true, index === moreItems.length - 1))}
                       </div>
                     </motion.div>
                   )}
@@ -262,9 +269,9 @@ export default function BottomNav() {
                   }`}
                 >
                   {/* Active background for More menu */}
-                  {(isMenuOpen || moreItems.some(item => item.path === location.pathname)) && (
+                  {/* {(isMenuOpen || moreItems.some(item => item.path === location.pathname)) && (
                     <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-purple-500 rounded-xl sm:rounded-2xl shadow-lg shadow-purple-500/50" />
-                  )}
+                  )} */}
                   
                   <div className="relative z-10 flex flex-col items-center gap-0.5 sm:gap-1">
                     {isMenuOpen ? <X className="w-4 h-4 sm:w-5 sm:h-5" /> : <Menu className="w-4 h-4 sm:w-5 sm:h-5" />}
@@ -287,7 +294,7 @@ export default function BottomNav() {
                       
                       {/* Dropdown content */}
                       <div className="relative backdrop-blur-3xl bg-gradient-to-br from-[#190830]/85 to-[#190830]/85 border border-purple-500/30 rounded-2xl shadow-2xl p-2">
-                        {moreItems.map(item => renderNavItem(item, true))}
+                        {moreItems.map((item, index) => renderNavItem(item, true, index === moreItems.length - 1))}
                       </div>
                     </motion.div>
                   )}

@@ -82,6 +82,31 @@ body {
   border: 1px solid rgba(126, 41, 240, 0.2);
 }
 
+/* Targets the internal wrapper Recharts creates */
+.recharts-wrapper {
+  outline: none !important;
+}
+
+/* Targets the SVG surface itself */
+.recharts-surface {
+  outline: none !important;
+}
+
+/* Remove focus outline from Recharts components */
+.recharts-wrapper,
+.recharts-surface,
+.recharts-wrapper:focus,
+.recharts-surface:focus {
+  outline: none !important;
+}
+
+/* Also prevent focus on chart elements */
+.recharts-wrapper * {
+  outline: none !important;
+}
+
+
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 6px;

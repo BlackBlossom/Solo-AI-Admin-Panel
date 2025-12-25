@@ -30,9 +30,7 @@ const Users = () => {
   const [banLoading, setBanLoading] = useState(false);
   const [banData, setBanData] = useState({
     status: 'banned',
-    reason: '',
-    duration: '',
-    isPermanent: false
+    reason: ''
   });
   const location = useLocation();
 
@@ -93,11 +91,6 @@ const Users = () => {
       return;
     }
 
-    if (!banData.isPermanent && !banData.duration) {
-      toast.error('Please specify ban duration or select permanent ban');
-      return;
-    }
-
     try {
       setBanLoading(true);
       const payload = {
@@ -105,20 +98,11 @@ const Users = () => {
         reason: banData.reason
       };
 
-      // Only add duration if not permanent
-      if (!banData.isPermanent && banData.duration) {
-        payload.duration = parseInt(banData.duration);
-      }
-
       await userService.banUser(selectedUser._id, payload);
       
-      const message = banData.isPermanent 
-        ? `User ${banData.status === 'banned' ? 'banned' : 'suspended'} permanently`
-        : `User ${banData.status === 'banned' ? 'banned' : 'suspended'} for ${banData.duration} days`;
-      
-      toast.success(message);
+      toast.success(`User ${banData.status === 'banned' ? 'banned' : 'suspended'} permanently`);
       setBanModalOpen(false);
-      setBanData({ status: 'banned', reason: '', duration: '', isPermanent: false });
+      setBanData({ status: 'banned', reason: '' });
       fetchUsers();
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to ban user');
@@ -521,7 +505,7 @@ const Users = () => {
                           <button
                             onClick={() => {
                               setSelectedUser(user);
-                              setBanData({ status: 'banned', reason: '', duration: '', isPermanent: false });
+                              setBanData({ status: 'banned', reason: '', duration: '', isPermanent: true });
                               setBanModalOpen(true);
                             }}
                             className="flex-1 px-4 py-2.5 bg-orange-50 dark:bg-orange-900/20 border border-orange-200/50 dark:border-orange-800/50 text-orange-600 dark:text-orange-400 rounded-xl hover:bg-orange-100 dark:hover:bg-orange-900/30 hover:scale-105 transition-all duration-300 font-medium text-sm flex items-center justify-center gap-2"
@@ -578,7 +562,7 @@ const Users = () => {
         isOpen={banModalOpen}
         onClose={() => {
           setBanModalOpen(false);
-          setBanData({ status: 'banned', reason: '', duration: '', isPermanent: false });
+          setBanData({ status: 'banned', reason: '' });
         }}
         title={`${banData.status === 'banned' ? 'Ban' : 'Suspend'} User Account`}
       >
@@ -624,7 +608,7 @@ const Users = () => {
             <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
               Action Type
             </label>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <button
                 onClick={() => setBanData({ ...banData, status: 'banned' })}
                 className={`p-4 rounded-xl border-2 transition-all duration-300 ${
@@ -635,13 +619,15 @@ const Users = () => {
               >
                 <div className="flex items-center gap-2 mb-1">
                   <Ban className={`w-4 h-4 ${banData.status === 'banned' ? 'text-red-600' : 'text-gray-400'}`} />
-                  <span className={`font-semibold text-sm ${banData.status === 'banned' ? 'text-red-700 dark:text-red-400' : 'text-gray-600 dark:text-gray-400'}`}>
-                    Ban Account
-                  </span>
+                  <div className="text-left">
+                    <span className={`font-semibold text-sm ${banData.status === 'banned' ? 'text-red-700 dark:text-red-400' : 'text-gray-600 dark:text-gray-400'}`}>
+                      Ban Account
+                    </span>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      Prohibit access due to violations
+                    </p>
+                  </div>
                 </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  Prohibit access due to violations
-                </p>
               </button>
 
               {/* <button
@@ -665,59 +651,19 @@ const Users = () => {
             </div>
           </div>
 
-          {/* Duration Options */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-              Duration
-            </label>
-            
-            {/* Permanent Toggle */}
-            <div className="mb-3">
-              <label className="flex items-center gap-3 p-3 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800/50 dark:to-gray-900/50 rounded-xl border border-gray-200 dark:border-gray-700 cursor-pointer hover:border-purple-300 dark:hover:border-purple-700 transition-all">
-                <input
-                  type="checkbox"
-                  checked={banData.isPermanent}
-                  onChange={(e) => setBanData({ ...banData, isPermanent: e.target.checked, duration: '' })}
-                  className="w-4 h-4 text-purple-600 rounded focus:ring-2 focus:ring-purple-500"
-                />
-                <div className="flex-1">
-                  <span className="font-medium text-gray-900 dark:text-white">Permanent {banData.status === 'banned' ? 'Ban' : 'Suspension'}</span>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">No automatic expiry, requires manual reactivation</p>
-                </div>
-              </label>
-            </div>
-
-            {/* Temporary Duration */}
-            {!banData.isPermanent && (
-              <div className="space-y-2">
-                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
-                  Temporary Duration (days)
-                </label>
-                <div className="grid grid-cols-4 gap-2 mb-3">
-                  {[7, 30, 60, 90].map((days) => (
-                    <button
-                      key={days}
-                      onClick={() => setBanData({ ...banData, duration: days.toString() })}
-                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                        banData.duration === days.toString()
-                          ? 'bg-gradient-to-r from-[#7E29F0] to-[#561E97] text-white shadow-lg'
-                          : 'bg-white/50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-purple-300'
-                      }`}
-                    >
-                      {days}d
-                    </button>
-                  ))}
-                </div>
-                <input
-                  type="number"
-                  value={banData.duration}
-                  onChange={(e) => setBanData({ ...banData, duration: e.target.value })}
-                  placeholder="Or enter custom days..."
-                  min="1"
-                  className="w-full px-4 py-3 bg-white/50 dark:bg-gray-800/50 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 backdrop-blur-sm transition-all duration-300 text-gray-900 dark:text-gray-100 placeholder-gray-400"
-                />
+          {/* Permanent Ban Info */}
+          <div className="p-4 bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 rounded-xl border border-purple-200/20 dark:border-purple-700/20">
+            <div className="flex items-start gap-3">
+              <Shield className="w-5 h-5 text-purple-600 dark:text-purple-400 mt-0.5 flex-shrink-0" />
+              <div>
+                <h4 className="text-sm font-semibold text-purple-900 dark:text-purple-300 mb-1">
+                  Permanent {banData.status === 'banned' ? 'Ban' : 'Suspension'}
+                </h4>
+                <p className="text-xs text-purple-700 dark:text-purple-400">
+                  This action will permanently {banData.status} the user. The account will require manual reactivation by an administrator.
+                </p>
               </div>
-            )}
+            </div>
           </div>
 
           {/* Ban Reason */}
@@ -745,14 +691,9 @@ const Users = () => {
             <div className="p-4 bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 rounded-xl border border-purple-200/20 dark:border-purple-700/20">
               <h5 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">Action Summary:</h5>
               <ul className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
-                <li>• User will be <strong className="text-gray-900 dark:text-white">{banData.status}</strong></li>
-                <li>• Duration: <strong className="text-gray-900 dark:text-white">{banData.isPermanent ? 'Permanent' : `${banData.duration} days`}</strong></li>
+                <li>• User will be <strong className="text-gray-900 dark:text-white">{banData.status} permanently</strong></li>
                 <li>• They will see: "<em>{banData.reason}</em>"</li>
-                {!banData.isPermanent && banData.duration && (
-                  <li>• Account auto-reactivates on: <strong className="text-gray-900 dark:text-white">
-                    {new Date(Date.now() + parseInt(banData.duration) * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                  </strong></li>
-                )}
+                <li>• Requires manual reactivation by an administrator</li>
               </ul>
             </div>
           )}
@@ -762,7 +703,7 @@ const Users = () => {
             <button
               onClick={() => {
                 setBanModalOpen(false);
-                setBanData({ status: 'banned', reason: '', duration: '', isPermanent: false });
+                setBanData({ status: 'banned', reason: '' });
               }}
               className="flex-1 px-6 py-3 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl font-semibold transition-all duration-300"
             >
@@ -770,7 +711,7 @@ const Users = () => {
             </button>
             <button
               onClick={handleBanUser}
-              disabled={banLoading || !banData.reason.trim() || (!banData.isPermanent && !banData.duration)}
+              disabled={banLoading || !banData.reason.trim()}
               className={`flex-1 px-6 py-3 bg-gradient-to-r ${
                 banData.status === 'banned' 
                   ? 'from-red-500 to-red-600 hover:from-red-600 hover:to-red-700' 
