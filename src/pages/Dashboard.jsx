@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Users, 
@@ -11,7 +11,8 @@ import {
   AlertCircle,
   ArrowUp,
   BarChart3,
-  ChevronLeft
+  ChevronLeft,
+  Info
 } from 'lucide-react';
 import { dashboardService } from '../services/dashboardService';
 import Card from '../components/ui/Card';
@@ -21,6 +22,47 @@ import Button from '../components/ui/Button';
 import toast from 'react-hot-toast';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend } from 'recharts';
 
+// Custom hook to track container dimensions
+const useContainerDimensions = () => {
+  const [node, setNode] = useState(null);
+  const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+
+  // Callback ref to handle when the element is mounted/unmounted
+  const ref = useCallback((newNode) => {
+    setNode(newNode);
+  }, []);
+
+  useEffect(() => {
+    if (!node) return;
+
+    const updateDimensions = () => {
+      const { width, height } = node.getBoundingClientRect();
+      if (width > 0 && height > 0) {
+        setDimensions(prev => {
+          // Only update if dimensions actually changed
+          if (prev.width !== width || prev.height !== height) {
+            return { width, height };
+          }
+          return prev;
+        });
+      }
+    };
+
+    // Use ResizeObserver for reliable dimension tracking
+    const resizeObserver = new ResizeObserver(updateDimensions);
+    resizeObserver.observe(node);
+
+    // Initial measurement
+    updateDimensions();
+    
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [node]);
+
+  return { ref, dimensions };
+};
+
 const Dashboard = () => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -28,6 +70,10 @@ const Dashboard = () => {
   const [chartView, setChartView] = useState('year'); // 'year', 'month', 'day'
   const [selectedMonth, setSelectedMonth] = useState(null);
   const [selectedDay, setSelectedDay] = useState(null);
+  
+  // Chart container dimension tracking
+  const pieChartContainer = useContainerDimensions();
+  const barChartContainer = useContainerDimensions();
 
   useEffect(() => {
     fetchStats();
@@ -399,21 +445,18 @@ const Dashboard = () => {
             transition={{ delay: index * 0.1 }}
             className="relative group"
           >
-            {/* Glow effect */}
-            <div className={`absolute -inset-0.5 bg-gradient-to-r ${stat.gradient} rounded-2xl blur opacity-30 group-hover:opacity-50 transition duration-300`} />
-            
-            {/* Card */}
-            <div className="relative backdrop-blur-xl bg-white/50 dark:bg-gray-900/50 border border-purple-500/20 rounded-2xl p-6 shadow-xl hover:shadow-2xl transition-all duration-300 group-hover:scale-[1.02]">
+            <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-2xl opacity-0 group-hover:opacity-20 blur-xl transition-all duration-500" />
+            <div className="relative backdrop-blur-xl bg-white/50 dark:bg-gray-900/50 border border-purple-500/20 rounded-2xl p-6 hover:scale-105 transition-all duration-300 shadow-xl">
               <div className="flex items-center justify-between mb-3">
                 <div className={`p-3 bg-gradient-to-br ${stat.gradient} rounded-xl shadow-lg`}>
-                  <stat.icon className="w-6 h-6 text-white" />
+                  <stat.icon size={20} className="text-white" />
                 </div>
-                <TrendingUp className="w-5 h-5 text-purple-400" />
+                <TrendingUp className="w-4 h-4 text-gray-400" />
               </div>
+              <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">{stat.title}</h3>
               <p className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
                 {stat.value}
               </p>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{stat.title}</p>
               <p className="text-xs text-gray-500 dark:text-gray-500">{stat.subtitle}</p>
             </div>
           </motion.div>
@@ -429,23 +472,25 @@ const Dashboard = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
           >
-            <div className="backdrop-blur-xl bg-white/50 dark:bg-gray-900/50 border border-purple-500/20 rounded-2xl p-6 shadow-xl hover:shadow-2xl transition-all duration-300">
-              <div className="mb-4">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Platform Distribution</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Posts across platforms</p>
+            <div className="backdrop-blur-xl bg-white/50 dark:bg-gray-900/50 border border-purple-500/20 rounded-2xl p-6 px-5 sm:p-6 sm:px-6 shadow-xl hover:shadow-2xl transition-all duration-300 flex flex-col h-full">
+              <div className="mb-4 flex-shrink-0">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">Platform Distribution</h3>
+                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Posts across platforms</p>
               </div>
-              <ResponsiveContainer width="100%" height={280}>
-                <PieChart>
-                  <Pie
-                    data={platformData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                    outerRadius={85}
-                    fill="#8884d8"
-                    dataKey="value"
-                  >
+              <div ref={pieChartContainer.ref} className="flex-1 min-h-[250px] flex flex-col justify-center">
+                {pieChartContainer.dimensions.width > 0 && pieChartContainer.dimensions.height > 0 && (
+                <ResponsiveContainer width={pieChartContainer.dimensions.width} height={pieChartContainer.dimensions.height}>
+                  <PieChart>
+                    <Pie
+                      data={platformData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={window.innerWidth >= 640 ? ({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%` : false}
+                      outerRadius="70%"
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
                     {platformData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
@@ -471,7 +516,9 @@ const Dashboard = () => {
                   />
                 </PieChart>
               </ResponsiveContainer>
-              <div className="grid grid-cols-3 gap-3 mt-4">
+                )}
+              </div>
+              <div className="grid grid-cols-3 gap-3 flex-shrink-0">
                 {platformData.map((platform, index) => (
                   <div key={index} className="text-center">
                     <div className="w-2.5 h-2.5 rounded-full mx-auto mb-1" style={{ backgroundColor: COLORS[index] }} />
@@ -491,30 +538,47 @@ const Dashboard = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
         >
-          <div className="backdrop-blur-xl bg-white/50 dark:bg-gray-900/50 border border-purple-500/20 rounded-2xl p-6 shadow-xl hover:shadow-2xl transition-all duration-300 h-full flex flex-col">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
+          <div className="backdrop-blur-xl bg-white/50 dark:bg-gray-900/50 border border-purple-500/20 rounded-2xl p-6 px-5 sm:p-6 sm:px-6 shadow-xl hover:shadow-2xl transition-all duration-300 flex flex-col">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-4">
+              <div className="flex items-center gap-2 sm:gap-3">
                 {chartView !== 'year' && (
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={handleBackClick}
-                    className="p-2 rounded-lg bg-white/50 dark:bg-gray-800/50 text-gray-700 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-800 border border-purple-200 dark:border-purple-700/50 transition-all duration-300"
+                    className="p-2 rounded-lg bg-white/50 dark:bg-gray-800/50 text-gray-700 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-800 border border-purple-200 dark:border-purple-700/50 transition-all duration-300 flex-shrink-0"
                   >
                     <ChevronLeft size={18} />
                   </motion.button>
                 )}
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{getChartTitle()}</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {chartView === 'year' ? 'Monthly user registration trend' : 
-                     chartView === 'month' ? 'Click on a day to see hourly data' : 
-                     'Hourly user registration data'}
-                  </p>
+                <div className="min-w-0 flex items-center gap-2">
+                  <div>
+                    <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white truncate">{getChartTitle()}</h3>
+                    <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 hidden sm:block">
+                      {chartView === 'year' ? 'Monthly user registration trend' : 
+                       chartView === 'month' ? 'Click on a day to see hourly data' : 
+                       'Hourly user registration data'}
+                    </p>
+                  </div>
+                  <div className="relative group flex-shrink-0">
+                    <Info className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600 dark:text-purple-400 cursor-help" />
+                    <div className="absolute right-0 sm:right-auto sm:left-0 bottom-full mb-2 w-64 sm:w-72 p-3 bg-gray-900 dark:bg-gray-800 text-white text-xs rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
+                      <p className="font-semibold mb-1">Interactive Chart</p>
+                      <p className="text-gray-300 dark:text-gray-400">
+                        {chartView === 'year' && 'Click on any month bar to see daily breakdown'}
+                        {chartView === 'month' && 'Click on any day bar to see hourly breakdown'}
+                        {chartView === 'day' && 'This shows hourly user registrations'}
+                      </p>
+                      {chartView !== 'year' && (
+                        <p className="text-gray-300 dark:text-gray-400 mt-1">← Use the back button to return</p>
+                      )}
+                      <div className="absolute right-4 sm:right-auto sm:left-4 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900 dark:border-t-gray-800" />
+                    </div>
+                  </div>
                 </div>
               </div>
               {chartView === 'year' && (
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-shrink-0 overflow-x-auto pb-1">
                   {availableYears.map((year) => (
                     <motion.button
                       key={year}
@@ -526,7 +590,7 @@ const Dashboard = () => {
                         setSelectedMonth(null);
                         setSelectedDay(null);
                       }}
-                      className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all duration-300 ${
+                      className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg font-semibold text-xs sm:text-sm transition-all duration-300 flex-shrink-0 ${
                         selectedYear === year
                           ? 'bg-gradient-to-r from-[#7E29F0] to-[#561E97] text-white shadow-lg shadow-purple-500/50'
                           : 'bg-white/50 dark:bg-gray-800/50 text-gray-700 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-800 border border-purple-200 dark:border-purple-700/50'
@@ -538,21 +602,32 @@ const Dashboard = () => {
                 </div>
               )}
             </div>
-            <div className="flex-1 min-h-0">
-              <ResponsiveContainer width="100%" height="100%">
+            <div ref={barChartContainer.ref} className="w-full h-[280px] sm:h-[350px] lg:h-[400px] select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none', WebkitTouchCallout: 'none', outline: 'none' }}>
+              {barChartContainer.dimensions.width > 0 && barChartContainer.dimensions.height > 0 && (
+              <ResponsiveContainer width={barChartContainer.dimensions.width} height={barChartContainer.dimensions.height}>
               <BarChart
+                className='outline-none focus:outline-none'
                 data={getChartData()}
-                margin={{ top: 5, right: 5, left: -20, bottom: 5 }}
+                margin={{ 
+                  top: 5, 
+                  right: 5, 
+                  left: -25, 
+                  bottom: window.innerWidth < 640 ? -10 : 20 
+                }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(126, 41, 240, 0.1)" />
                 <XAxis 
                   dataKey={getXAxisKey()} 
                   stroke="#9CA3AF"
-                  tick={{ fill: '#6B7280', fontSize: 12 }}
+                  tick={{ fill: '#6B7280', fontSize: window.innerWidth < 640 ? 10 : 12 }}
+                  angle={window.innerWidth < 640 ? -45 : 0}
+                  textAnchor={window.innerWidth < 640 ? "end" : "middle"}
+                  height={window.innerWidth < 640 ? 60 : 30}
                 />
                 <YAxis 
                   stroke="#9CA3AF"
-                  tick={{ fill: '#6B7280', fontSize: 12 }}
+                  tick={{ fill: '#6B7280', fontSize: window.innerWidth < 640 ? 10 : 12 }}
+                  width={window.innerWidth < 640 ? 35 : 60}
                 />
                 <Tooltip 
                   contentStyle={{ 
@@ -590,6 +665,7 @@ const Dashboard = () => {
                 </defs>
               </BarChart>
             </ResponsiveContainer>
+              )}
             </div>
           </div>
         </motion.div>

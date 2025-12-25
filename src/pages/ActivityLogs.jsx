@@ -179,21 +179,18 @@ const ActivityLogs = () => {
             transition={{ delay: index * 0.1 }}
             className="relative group"
           >
-            {/* Glow effect */}
-            <div className={`absolute -inset-0.5 bg-gradient-to-r ${stat.color} rounded-2xl blur opacity-30 group-hover:opacity-50 transition duration-300`} />
-            
-            {/* Card */}
-            <div className="relative backdrop-blur-xl bg-white/50 dark:bg-gray-900/50 border border-purple-500/20 rounded-2xl p-6 shadow-xl">
+            <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-2xl opacity-0 group-hover:opacity-20 blur-xl transition-all duration-500" />
+            <div className="relative backdrop-blur-xl bg-white/50 dark:bg-gray-900/50 border border-purple-500/20 rounded-2xl p-6 hover:scale-105 transition-all duration-300 shadow-xl">
               <div className="flex items-center justify-between mb-3">
                 <div className={`p-3 bg-gradient-to-br ${stat.color} rounded-xl shadow-lg`}>
-                  <stat.icon className="w-6 h-6 text-white" />
+                  <stat.icon size={20} className="text-white" />
                 </div>
-                <TrendingUp className="w-5 h-5 text-purple-400" />
+                <TrendingUp className="w-4 h-4 text-gray-400" />
               </div>
-              <p className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
+              <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">{stat.label}</h3>
+              <p className="text-3xl font-bold text-gray-900 dark:text-white">
                 {stat.value}
               </p>
-              <p className="text-sm text-gray-600 dark:text-gray-400">{stat.label}</p>
             </div>
           </motion.div>
         ))}
